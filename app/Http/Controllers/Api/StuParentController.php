@@ -14,9 +14,53 @@ class StuParentController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        return StuParent::all();
+        $r = null;
+        $stuParent = new StuParent();
+
+        // check query used or not
+        if (null !== $request->query() && $q = $request->query()) {
+
+            // list of params
+            $sortArr = ['id', 'father_name', 'mother_name'];
+
+            // if order parameter found
+            if (isset($q['sort']) && !in_array($q['sort'], $sortArr)) {
+
+                // if order pararameter is not valid
+                $list_param = join(' or ', array_filter(array_merge(array(join(', ', array_slice($sortArr, 0, -1))), array_slice($sortArr, -1)), 'strlen'));
+                return "Sort parameter must be <strong> $list_param </strong> .";
+            }
+
+
+            if (isset($q['order']) && !in_array(strtolower($q['order']), ['asc', 'desc'])) {
+
+                // if order pararameter is not valid
+                return 'Order parameter should be <strong>ASC</strong> or <strong>DESC</strong>';
+            }
+
+            // if any parameter found
+            if (isset($q['sort']) && isset($q['order'])) {
+                // if both sort and order parameters found
+                $r = $stuParent->orderBy($q['sort'], $q['order']);
+            } else {
+                if (isset($q['sort'])) {
+                    // if sort parameter found
+                    $r = $stuParent->orderBy($q['sort']);
+                }
+                if (isset($q['order'])) {
+                    // if order parameter found
+                    $r = $stuParent->orderBy('id', $q['order']);
+                }
+            }
+        }
+
+        if ($r !== null) {
+            return $r->get();
+        } else {
+            return $stuParent->get();
+        }
     }
 
     /**
@@ -48,6 +92,8 @@ class StuParentController extends Controller
                 "mother_qualification" => "required",
                 "mother_occupation" => "required",
                 "mother_annual_income" => "nullable|numeric",
+
+                "created_by" => "required|numeric"
             ]
         );
 
@@ -135,5 +181,3 @@ class StuParentController extends Controller
         //
     }
 }
-
-    
